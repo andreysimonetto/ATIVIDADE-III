@@ -1547,9 +1547,45 @@
         });
 
         // ===== INICIALIZAR =====
-        document.addEventListener('DOMContentLoaded', () => {
-            renderProducts();
-        });
+        
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const { db } = await import('./firebase-config.js');
+        const { collection, getDocs } = await import(
+            'https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js'
+        );
+
+        const resultado = await getDocs(collection(db, 'produtos'));
+
+        if (!resultado.empty) {
+            const produtosFirebase = resultado.docs.map(documento => {
+                const p = documento.data();
+
+                return {
+                    id: documento.id,
+                    name: p.nome || 'Produto',
+                    category: p.categoria || 'Geral',
+                    price: Number(p.preco || 0),
+                    description: p.descricao || '',
+                    rating: 5,
+                    badge: 'Novo',
+                    image: p.imagem || p.image ||
+                        'https://placehold.co/600x400?text=Produto'
+                };
+            });
+
+            products.splice(0, products.length, ...produtosFirebase);
+        }
+
+        renderProducts();
+
+    } catch (erro) {
+        console.error('Erro ao buscar produtos no Firebase:', erro);
+        renderProducts();
+        showNotification('Não foi possível carregar os produtos do Firebase.');
+    }
+});
+
     </script>
 </body>
 </html>
